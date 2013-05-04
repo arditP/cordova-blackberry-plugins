@@ -31,8 +31,6 @@ var exec = cordova.require("cordova/exec"),
     ContactPickerOptions = require("./ContactPickerOptions"),
     ContactAccount = require("./ContactAccount"),
     contactUtils = require("./contactUtils");
-    //_contactInvokeEventId = "invokeContactPicker.invokeEventId",
-    //_contactPickerEventId = "invokeContactPicker.eventId";
 
 function invokeCallback(callback, args) {
     if (callback && typeof callback === "function") {
@@ -174,13 +172,11 @@ _self.invokeContactPicker = function (options, onDone, onCancel, onInvoke) {
                 break;
             }
         },
-        invokeCallback = function (/*args*/ result) {
-            //var result = JSON.parse(unescape(args.result)),
+        invokeCallback = function (result) {
             var  error;
 
             if (!result._success) {
                 error = new ContactError(result.code);
-                //window.webworks.event.remove(_ID, _contactPickerEventId, doneCancelCallback);
             }
 
             if (onInvoke && typeof(onInvoke) === "function") {
@@ -198,14 +194,6 @@ _self.invokeContactPicker = function (options, onDone, onCancel, onInvoke) {
             return;
         }
     }
-
-    //if (!window.webworks.event.isOn(_contactPickerEventId)) {
-      //  window.webworks.event.once(_ID, _contactPickerEventId, doneCancelCallback);
-    //}
-
-    //if (!window.webworks.event.isOn(_contactInvokeEventId)) {
-      //  window.webworks.event.once(_ID, _contactInvokeEventId, invokeCallback);
-    //}
 
     exec(function (result) {
         if (result.type === "invoke") {
@@ -226,7 +214,7 @@ _self.getContactAccounts = function () {
         },
         accounts = [];
 
-    window.webworks.exec(success, fail, _ID, "getContactAccounts");
+    exec(success, fail, _ID, "getContactAccounts");
 
     obj.forEach(function (account) {
         accounts.push(new ContactAccount(account));

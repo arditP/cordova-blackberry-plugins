@@ -15,7 +15,6 @@
  */
 
 var pimContacts,
-    //_event = require("../../lib/event"),
     _utils = require("../../lib/utils"),
     config = require("../../lib/config"),
     contactUtils = require("./contactUtils"),
@@ -24,17 +23,8 @@ var pimContacts,
     ContactPickerOptions = require("./ContactPickerOptions"),
     PERMISSION_DENIED_MSG = "Permission denied";
 
-function checkPermission(/*success, eventId*/ pluginResult) {
+function checkPermission(pluginResult) {
     if (!_utils.hasPermission(config, "access_pimdomain_contacts")) {
-/*
-        _event.trigger(eventId, {
-            "result": escape(JSON.stringify({
-                "_success": false,
-                "code": ContactError.PERMISSION_DENIED_ERROR
-            }))
-        });
-*/
-//        success();
         pluginResult.callbackError({
             "result": escape(JSON.stringify({
                 "_success": false,
@@ -200,33 +190,18 @@ module.exports = {
             }
         }
 
-        if (!checkPermission(result/*success, findOptions["_eventId"])*/)) {
+        if (!checkPermission(result)) {
             return;
         }
 
         if (!contactUtils.validateFindArguments(findOptions.options)) {
-            /*
-            _event.trigger(findOptions._eventId, {
-                "result": escape(JSON.stringify({
-                    "_success": false,
-                    "code": ContactError.INVALID_ARGUMENT_ERROR
-                }))
-            });*/
-//            success();
-            result.callbackError({
-                "result": escape(JSON.stringify({
-                    "_success": false,
-                    "code": ContactError.INVALID_ARGUMENT_ERROR
-                }))
-            });
+            result.callbackError(ContactError.INVALID_ARGUMENT_ERROR, false);
             return;
         }
 
         getAccountFilters(findOptions.options);
-        console.log("I will call pimContacts find!");
         pimContacts.getInstance().find(findOptions, result, processJnextFindData);
 
-        //success();
         result.noResult(true);
     },
 
@@ -260,18 +235,16 @@ module.exports = {
             result = new PluginResult(args, env),
             key,
             nativeEmails = [];
-/*
+
+        if (!checkPermission(result)) {
+            return;
+        }
+
         for (key in args) {
             if (args.hasOwnProperty(key)) {
                 attributes[key] = JSON.parse(decodeURIComponent(args[key]));
             }
         }
-*/
-        if (!checkPermission(result /* success, attributes["_eventId"])*/)) {
-            return;
-        }
-
-        attributes = JSON.parse(decodeURIComponent(args[0]));
 
         if (attributes.emails) {
             attributes.emails.forEach(function (email) {
@@ -293,20 +266,20 @@ module.exports = {
         }
 
         attributes._eventId = result.callbackId;
-
         pimContacts.getInstance().save(attributes, result, processJnextSaveData);
-        //success();
+
         result.noResult(true);
     },
 
     remove: function (success, fail, args, env) {
         var result = new PluginResult(args, env),
-            attributes = { "contactId" : JSON.parse(decodeURIComponent(args.contactId)),
-                           "_eventId" : JSON.parse(decodeURIComponent(args._eventId))};
+            attributes = { "contactId" : JSON.parse(decodeURIComponent(args.contactId)) };
 
-        if (!checkPermission(result /*success, attributes["_eventId"]*/)) {
+        if (!checkPermission(result)) {
             return;
         }
+
+        attributes._eventId = result.callbackId;
 
         if (!window.isNaN(attributes.contactId)) {
             pimContacts.getInstance().remove(attributes, result, processJnextRemoveData);
@@ -315,15 +288,12 @@ module.exports = {
             result.error(ContactError.UNKNOWN_ERROR);
             result.noResult(false);
         }
-
-//        success();
     },
 
     invokeContactPicker: function (success, fail, args, env) {
         var result = new PluginResult(args, env),
             options = JSON.parse(decodeURIComponent(args["options"])),
             callback = function (args, reason) {
-                //_event.trigger("invokeContactPicker.eventId", args, reason);
                 result.callbackOk({
                     "type": "doneCancel",
                     "data": args,
@@ -331,7 +301,7 @@ module.exports = {
                 });
             };
 
-        if (!checkPermission(/*success, "invokeContactPicker.invokeEventId"*/ result)) {
+        if (!checkPermission(result)) {
             return;
         }
 
@@ -352,22 +322,22 @@ module.exports = {
                 "result": invokeResult
             }, invokeResult._success);
         });
-        //success();
         result.noResult(true);
     },
 
-    getContactAccounts: function (success, fail, args) {
-        var result = {};
+    getContactAccounts: function (success, fail, args, env) {
+        var result = {},
+            pluginResult = new PluginResult(args, env);
 
         if (!_utils.hasPermission(config, "access_pimdomain_contacts")) {
-            fail(ContactError.PERMISSION_DENIED_ERROR, PERMISSION_DENIED_MSG);
+            pluginResult.callbackError(ContactError.PERMISSION_DENIED_ERROR);
             return;
         }
         result = pimContacts.getInstance().getContactAccounts();
         if (result._success) {
-            success(result.accounts);
+            pluginResult.ok(result.accounts, false);
         } else {
-            fail(-1, "Failed to get accounts");
+            pluginResult.error("Failed to get accounts", false);
         }        
     }
 };
@@ -402,7 +372,6 @@ JNEXT.PimContacts = function ()
     };
 */
     self.find = function (findOptions, pluginResult, handler) {
-        console.log("I am in find!");
         var jnextArgs = {};
             //findHandler = self.eventHandlers[findOptions.callbackId];
 
@@ -432,7 +401,6 @@ JNEXT.PimContacts = function ()
     }
 
     self.getContact = function (args) {
-        console.log("I am in JNEXT getContact");
         return JSON.parse(JNEXT.invoke(self.m_id, "getContact " + JSON.stringify(args)));
     };
 
@@ -458,10 +426,11 @@ JNEXT.PimContacts = function ()
         return "";
     };
 
-    self.invokePicker = function (options, pluginResult) {
+    self.invokePicker = function (options, pluginResult, handler) {
         self.eventHandlers["invokeContactPicker.invokeEventId"] = {
             "result": pluginResult,
-            "action": "invokePicker"
+            "action": "invokePicker",
+            "handler": handler
         };
         JNEXT.invoke(self.m_id, "invokePicker " + JSON.stringify(options));
     };
@@ -498,7 +467,7 @@ JNEXT.PimContacts = function ()
         if (strEventDesc === "result") {
             args.result = escape(strData.split(" ").slice(2).join(" "));
             eventHandler = self.eventHandlers[arData[1]];
-            //_event.trigger(arData[1], args);
+
             if (eventHandler.action === "save" || eventHandler.action === "remove") {
                 eventHandler.handler(eventHandler.result, JSON.parse(decodeURIComponent(args.result)));
             } else if (eventHandler.action === "find") {

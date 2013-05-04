@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var Contact,
+var exec = cordova.require("cordova/exec"),
+    Contact,
     ContactError = require("./ContactError"),
     ContactAccount = require("./ContactAccount"),
     _ID = "com.blackberry.pim.contacts",
@@ -232,8 +233,8 @@ Contact.prototype.save = function (onSaveSuccess, onSaveError) {
         args.id = window.parseInt(this.id);
     }
 
-    args._eventId = contactUtils.guid();
-
+    //args._eventId = contactUtils.guid();
+/*
     saveCallback = function (args) {
         var result = JSON.parse(unescape(args.result)),
             newContact,
@@ -254,9 +255,22 @@ Contact.prototype.save = function (onSaveSuccess, onSaveError) {
             }
         }
     };
+*/
+    //window.webworks.event.once(_ID, args._eventId, saveCallback);
+    exec(function (result) {
+        if (successCallback) {
+            result.id = result.id.toString();
+            contactUtils.populateContact(result);
 
-    window.webworks.event.once(_ID, args._eventId, saveCallback);
-    window.webworks.exec(function () {}, function () {}, _ID, "save", args);
+            newContact = new Contact(result);
+            successCallback(newContact);
+        }
+    }, function (code) {
+            if (errorCallback && typeof(errorCallback) === "function") {
+                errorObj = new ContactError(code);
+                errorCallback(errorObj);
+            }
+    }, _ID, "save", args);
 };
 
 Contact.prototype.remove = function (onRemoveSuccess, onRemoveError) {
@@ -274,8 +288,8 @@ Contact.prototype.remove = function (onRemoveSuccess, onRemoveError) {
     }
 
     args.contactId = window.parseInt(this.id);
-    args._eventId = contactUtils.guid();
-
+    //args._eventId = contactUtils.guid();
+/*
     removeCallback = function (args) {
         var result = JSON.parse(unescape(args.result)),
             errorObj;
@@ -291,9 +305,18 @@ Contact.prototype.remove = function (onRemoveSuccess, onRemoveError) {
             }
         }
     };
-
-    window.webworks.event.once(_ID, args._eventId, removeCallback);
-    window.webworks.exec(function () {}, function () {}, _ID, "remove", args);
+*/
+//    window.webworks.event.once(_ID, args._eventId, removeCallback);
+    exec(function (result) {
+        if (successCallback) {
+            successCallback();
+        }
+    }, function (code) {
+        if (errorCallback && typeof(errorCallback) === "function") {
+            var errorObj = new ContactError(code);
+            errorCallback(errorObj);
+        }
+    }, _ID, "remove", args);
 };
 
 Contact.prototype.clone = function () {
