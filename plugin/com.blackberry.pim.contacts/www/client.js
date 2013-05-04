@@ -59,34 +59,9 @@ _self.find = function (contactFields, findOptions, onFindSuccess, onFindError) {
         contactUtils.invokeErrorCallback(onFindError, ContactError.INVALID_ARGUMENT_ERROR);
         return;
     }
-/*
-    callback = function (args) {
-        var result = JSON.parse(unescape(args.result)),
-            contacts = result.contacts,
-            realContacts = [];
-
-        if (result._success) {
-            if (contacts) {
-                contacts.forEach(function (contact) {
-                    contact.id = contact.id.toString();
-                    contactUtils.populateContact(contact);
-                    realContacts.push(new Contact(contact));
-                });
-            }
-            onFindSuccess(realContacts);
-        } else {
-            invokeCallback(onFindError, new ContactError(result.code));
-        }
-    };
-*/
-    //eventId = contactUtils.guid();
-
-    //window.webworks.event.once(_ID, eventId, callback);
 
     exec(
         function (searchResult) {
-            console.log("success!");
-            console.log(searchResult);
             var realContacts = [];
             searchResult.forEach(function (contact) {
                 contact.id = contact.id.toString();
@@ -96,7 +71,7 @@ _self.find = function (contactFields, findOptions, onFindSuccess, onFindError) {
             onFindSuccess(realContacts);
         }, 
         function (code) {
-            invokeCallback(onFindError, new ContactError(code))
+            invokeCallback(onFindError, new ContactError(code));
         },
         _ID,
         "find",

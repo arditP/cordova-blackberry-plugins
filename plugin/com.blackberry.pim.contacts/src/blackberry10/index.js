@@ -104,7 +104,6 @@ function processJnextSaveData(result, JnextData) {
         birthdayInfo;
 
     if (data._success === true) {
-        //data.birthday = convertBirthday(data.birthday);
         result.callbackOk(data, false);
     } else {
         result.callbackError(data.code, false);
@@ -117,24 +116,18 @@ function processJnextRemoveData(result, JnextData) {
     if (data._success === true) {
         result.callbackOk(data);
     } else {
-        result.callbackError(ContactError.UNKNOWN_ERROR, false);
+        result.callbackError(data.code, false);
     }
 }
 
 function processJnextFindData(eventId, eventHandler, JnextData) {
-    console.log("I am in processJnextFindData");
     var data = JnextData,
         i,
         l,
         more = false,
         resultsObject = {},
         birthdayInfo;
-/*
-    if (data.contacts) {
-        for (i = 0, l = data.contacts.length; i < l; i++) {
-            data.contacts[i].birthday = convertBirthday(data.contacts[i].birthday);
-        }
-*/
+
     if (!data.contacts) {
         data.contacts = []; // if JnextData.contacts return null, return an empty array
     }
@@ -143,43 +136,28 @@ function processJnextFindData(eventId, eventHandler, JnextData) {
         eventHandler.error = false;
     }
 
-    //if (eventHandler.multiple) {
-        // Concatenate results; do not add the same contacts
-        for (i = 0, l = eventHandler.searchResult.length; i < l; i++) {
-            resultsObject[eventHandler.searchResult[i].id] = true;
-        }
+    // Concatenate results; do not add the same contacts
+    for (i = 0, l = eventHandler.searchResult.length; i < l; i++) {
+        resultsObject[eventHandler.searchResult[i].id] = true;
+    }
 
-        for (i = 0, l = data.contacts.length; i < l; i++) {
-            if (resultsObject[data.contacts[i].id]) {
-                // Already existing
-            } else {
-                eventHandler.searchResult.push(data.contacts[i]);
-            }
-        }
-
-        // check if more search is required
-        //eventHandler.searchFieldIndex++;
-        //if (eventHandler.searchFieldIndex < eventHandler.searchFields.length) {
-          //  more = true;
-        //}
-    //} else {
-      //  eventHandler.searchResult = data.contacts;
-    //}
-
-    //if (more) {
-      //  pimContacts.getInstance().invokeJnextSearch(eventId);
-    //} else {
-        if (eventHandler.error) {
-            eventHandler.result.callbackError(data.code, false);
+    for (i = 0, l = data.contacts.length; i < l; i++) {
+        if (resultsObject[data.contacts[i].id]) {
+            // Already existing
         } else {
-            eventHandler.result.callbackOk(eventHandler.searchResult, false);
+            eventHandler.searchResult.push(data.contacts[i]);
         }
-    //}
+    }
+
+    if (eventHandler.error) {
+        eventHandler.result.callbackError(data.code, false);
+    } else {
+        eventHandler.result.callbackOk(eventHandler.searchResult, false);
+    }
 }
 
 module.exports = {
     find: function (success, fail, args, env) {
-        console.log("I am in contacts index find!");
         var findOptions = {},
             result = new PluginResult(args, env),
             key;
@@ -211,7 +189,7 @@ module.exports = {
             results;
 
         if (!_utils.hasPermission(config, "access_pimdomain_contacts")) {
-            result.error("Permission denied");
+            pluginResult.error("Permission denied", false);
             return;
         }
 
@@ -223,10 +201,10 @@ module.exports = {
             if (results.contact && results.contact.id) {
                 pluginResult.ok(results.contact, false);
             } else {
-                pluginResult.error("Unknown error");
+                pluginResult.error("Unknown error", false);
             }
         } else {
-            pluginResult.error("Unknown error");
+            pluginResult.error("Unknown error", false);
         }
     },
 
@@ -285,7 +263,7 @@ module.exports = {
             pimContacts.getInstance().remove(attributes, result, processJnextRemoveData);
             result.noResult(true);
         } else {
-            result.error(ContactError.UNKNOWN_ERROR);
+            result.error(ContactError.INVALID_ARGUMENT_ERROR);
             result.noResult(false);
         }
     },
@@ -350,30 +328,9 @@ JNEXT.PimContacts = function ()
 {   
     var self = this,
         hasInstance = false;
-/*
-    self.find = function (cordovaFindOptions, pluginResult, handler) {
-        console.log("I am in JNEXT find!");
-        //register find eventHandler for when JNEXT onEvent fires
-        self.eventHandlers[cordovaFindOptions.callbackId] = {
-            "result" : pluginResult,
-            "action" : "find",
-            //"multiple" : cordovaFindOptions[1].filter ? true : false,
-            "fields" : cordovaFindOptions[0],
-            //"searchFilter" : cordovaFindOptions[1].filter,
-            "searchFields" : cordovaFindOptions[1].filter ? populateSearchFields(cordovaFindOptions[0]) : null,
-            "searchFieldIndex" : 0,
-            "searchResult" : [],
-            "handler" : handler,
-            "error" : true
-        };
 
-        self.invokeJnextSearch(cordovaFindOptions.callbackId);
-        return "";
-    };
-*/
     self.find = function (findOptions, pluginResult, handler) {
         var jnextArgs = {};
-            //findHandler = self.eventHandlers[findOptions.callbackId];
 
         self.eventHandlers[findOptions.callbackId] = {
             "result" : pluginResult,
@@ -386,19 +343,9 @@ JNEXT.PimContacts = function ()
         jnextArgs._eventId = findOptions.callbackId;
         jnextArgs.fields = findOptions.fields;
         jnextArgs.options = findOptions.options;
-        jnextArgs.options.filter = [];
-/*
-        if (findHandler.multiple) {
-            jnextArgs.options.filter.push({
-                "fieldName" : findHandler.searchFields[findHandler.searchFieldIndex],
-                "fieldValue" : findHandler.searchFilter
-            });
-            //findHandler.searchFieldIndex++;
-        }
-*/
-        console.log("invoke!");
+
         JNEXT.invoke(self.m_id, "find " + JSON.stringify(jnextArgs));
-    }
+    };
 
     self.getContact = function (args) {
         return JSON.parse(JNEXT.invoke(self.m_id, "getContact " + JSON.stringify(args)));

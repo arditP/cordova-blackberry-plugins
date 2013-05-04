@@ -233,43 +233,16 @@ Contact.prototype.save = function (onSaveSuccess, onSaveError) {
         args.id = window.parseInt(this.id);
     }
 
-    //args._eventId = contactUtils.guid();
-/*
-    saveCallback = function (args) {
-        var result = JSON.parse(unescape(args.result)),
-            newContact,
-            errorObj;
-
-        if (result._success) {
-            if (successCallback) {
-                result.id = result.id.toString();
-                contactUtils.populateContact(result);
-
-                newContact = new Contact(result);
-                successCallback(newContact);
-            }
-        } else {
-            if (errorCallback && typeof(errorCallback) === "function") {
-                errorObj = new ContactError(result.code);
-                errorCallback(errorObj);
-            }
-        }
-    };
-*/
-    //window.webworks.event.once(_ID, args._eventId, saveCallback);
     exec(function (result) {
         if (successCallback) {
             result.id = result.id.toString();
             contactUtils.populateContact(result);
-
-            newContact = new Contact(result);
-            successCallback(newContact);
+            successCallback(new Contact(result));
         }
     }, function (code) {
-            if (errorCallback && typeof(errorCallback) === "function") {
-                errorObj = new ContactError(code);
-                errorCallback(errorObj);
-            }
+        if (errorCallback && typeof(errorCallback) === "function") {
+            errorCallback(new ContactError(code));
+        }
     }, _ID, "save", args);
 };
 
@@ -288,33 +261,14 @@ Contact.prototype.remove = function (onRemoveSuccess, onRemoveError) {
     }
 
     args.contactId = window.parseInt(this.id);
-    //args._eventId = contactUtils.guid();
-/*
-    removeCallback = function (args) {
-        var result = JSON.parse(unescape(args.result)),
-            errorObj;
 
-        if (result._success) {
-            if (successCallback) {
-                successCallback();
-            }
-        } else {
-            if (errorCallback && typeof(errorCallback) === "function") {
-                errorObj = new ContactError(result.code);
-                errorCallback(errorObj);
-            }
-        }
-    };
-*/
-//    window.webworks.event.once(_ID, args._eventId, removeCallback);
     exec(function (result) {
         if (successCallback) {
             successCallback();
         }
     }, function (code) {
         if (errorCallback && typeof(errorCallback) === "function") {
-            var errorObj = new ContactError(code);
-            errorCallback(errorObj);
+            errorCallback(new ContactError(code));
         }
     }, _ID, "remove", args);
 };
