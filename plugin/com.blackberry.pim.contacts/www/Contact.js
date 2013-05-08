@@ -28,7 +28,7 @@ function saveArgumentsError(contact, onSuccess, onError) {
         return "onSuccess should be a function";
     }
 
-    if (contact.id !== null && isNaN(contact.id)) {
+    if (contact.id !== null && window.isNaN(contact.id)) {
         return "id is required and must be a number";
     }
 
@@ -145,7 +145,7 @@ function validateRemoveArguments(id, onSuccess, onError) {
         return false;
     }
 
-    if (id === null || id === "" || isNaN(id)) {
+    if (id === null || id === "" || window.isNaN(id)) {
         return false;
     }
 
@@ -233,7 +233,7 @@ Contact.prototype.save = function (onSaveSuccess, onSaveError) {
         args.id = window.parseInt(this.id);
     }
 
-    exec(function (result) {
+    cordova.require("cordova/exec")(function (result) {
         if (successCallback) {
             result.id = result.id.toString();
             contactUtils.populateContact(result);
@@ -249,8 +249,7 @@ Contact.prototype.save = function (onSaveSuccess, onSaveError) {
 Contact.prototype.remove = function (onRemoveSuccess, onRemoveError) {
     var args = {},
         successCallback = onRemoveSuccess,
-        errorCallback = onRemoveError,
-        removeCallback;
+        errorCallback = onRemoveError;
 
     if (!validateRemoveArguments(this.id, successCallback, errorCallback)) {
         if (errorCallback && typeof(errorCallback) === "function") {
@@ -262,8 +261,8 @@ Contact.prototype.remove = function (onRemoveSuccess, onRemoveError) {
 
     args.contactId = window.parseInt(this.id);
 
-    exec(function (result) {
-        if (successCallback) {
+    cordova.require("cordova/exec")(function (result) {
+        if (successCallback && typeof(successCallback) === "function") {
             successCallback();
         }
     }, function (code) {

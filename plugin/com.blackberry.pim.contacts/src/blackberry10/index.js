@@ -25,12 +25,7 @@ var pimContacts,
 
 function checkPermission(pluginResult) {
     if (!_utils.hasPermission(config, "access_pimdomain_contacts")) {
-        pluginResult.callbackError({
-            "result": escape(JSON.stringify({
-                "_success": false,
-                "code": ContactError.PERMISSION_DENIED_ERROR
-            }))
-        });
+        pluginResult.callbackError(ContactError.PERMISSION_DENIED_ERROR, false);
         return false;
     }
 
@@ -72,9 +67,9 @@ function onChildCardClosed(cb) {
                     } else if (line.match("^id:n:")) {
                         result.contactId = line.slice(5);
                     } else if (line.match("^kind:n:")) {
-                        result.field = kindAttributeMap[parseInt(line.slice(7), 10)];
+                        result.field = kindAttributeMap[window.parseInt(line.slice(7), 10)];
                     } else if (line.match("^subKind:n:")) {
-                        result.type = subKindAttributeMap[parseInt(line.slice(10), 10)];
+                        result.type = subKindAttributeMap[window.parseInt(line.slice(10), 10)];
                     }
                 });
 
@@ -189,7 +184,7 @@ module.exports = {
             results;
 
         if (!_utils.hasPermission(config, "access_pimdomain_contacts")) {
-            pluginResult.error("Permission denied", false);
+            pluginResult.error(ContactError.PERMISSION_DENIED_ERROR, false);
             return;
         }
 
@@ -201,10 +196,10 @@ module.exports = {
             if (results.contact && results.contact.id) {
                 pluginResult.ok(results.contact, false);
             } else {
-                pluginResult.error("Unknown error", false);
+                pluginResult.error(ContactError.UNKNOWN_ERROR, false);
             }
         } else {
-            pluginResult.error("Unknown error", false);
+            pluginResult.error(ContactError.UNKNOWN_ERROR, false);
         }
     },
 
@@ -239,7 +234,7 @@ module.exports = {
 
         attributes["isWork"] = !_utils.isPersonal();
 
-        if (attributes.id !== null) {
+        if (attributes.id && attributes.id !== null) {
             attributes.id = window.parseInt(attributes.id);
         }
 
@@ -308,7 +303,7 @@ module.exports = {
             pluginResult = new PluginResult(args, env);
 
         if (!_utils.hasPermission(config, "access_pimdomain_contacts")) {
-            pluginResult.callbackError(ContactError.PERMISSION_DENIED_ERROR);
+            pluginResult.callbackError(ContactError.PERMISSION_DENIED_ERROR, false);
             return;
         }
         result = pimContacts.getInstance().getContactAccounts();
