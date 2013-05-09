@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var exec = cordova.require("cordova/exec"),
-    Contact,
+var Contact,
     ContactError = require("./ContactError"),
     ContactAccount = require("./ContactAccount"),
     _ID = "com.blackberry.pim.contacts",
